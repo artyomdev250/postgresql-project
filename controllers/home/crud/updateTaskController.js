@@ -1,4 +1,4 @@
-const pool = require("../../db");
+const pool = require("../../../db");
 
 function isPastDate(dateString) {
     const today = new Date();

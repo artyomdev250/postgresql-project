@@ -2,10 +2,10 @@ const express = require("express");
 const { requireAuth } = require("../middleware/auth");
 const { home } = require("../controllers/home/homeController");
 
-const { getTasks } = require("../controllers/home/getTasksController");
-const { createTask } = require("../controllers/home/createTaskController");
-const { updateTask } = require("../controllers/home/updateTaskController");
-const { deleteTask } = require("../controllers/home/deleteTaskController");
+const { getTasks } = require("../controllers/home/crud/getTasksController");
+const { createTask } = require("../controllers/home/crud/createTaskController");
+const { updateTask } = require("../controllers/home/crud/updateTaskController");
+const { deleteTask } = require("../controllers/home/crud/deleteTaskController");
 
 const { getCompletedTasks, getExpiredTasks } = require("../controllers/home/getTaskListsController");
 

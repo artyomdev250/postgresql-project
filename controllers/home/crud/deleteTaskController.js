@@ -1,4 +1,4 @@
-const pool = require("../../db");
+const pool = require("../../../db");
 
 exports.deleteTask = async (req, res) => {
     try {

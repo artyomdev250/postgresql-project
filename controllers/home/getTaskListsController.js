@@ -5,7 +5,9 @@ exports.getCompletedTasks = async (req, res) => {
         const userId = req.user.user_id;
 
         const result = await pool.query(
-            `SELECT task_id, title, deadline, description, tags, status, expired, created_at, updated_at
+            `SELECT task_id, title, deadline, description, tags, status,
+              FALSE AS expired,
+              created_at, updated_at
        FROM tasks_data
        WHERE user_id = $1 AND status = 'Completed'
        ORDER BY updated_at DESC`,
@@ -24,7 +26,9 @@ exports.getExpiredTasks = async (req, res) => {
         const userId = req.user.user_id;
 
         const result = await pool.query(
-            `SELECT task_id, title, deadline, description, tags, status, expired, created_at, updated_at
+            `SELECT task_id, title, deadline, description, tags, status,
+              TRUE AS expired,
+              created_at, updated_at
        FROM tasks_data
        WHERE user_id = $1
          AND status = 'Pending'

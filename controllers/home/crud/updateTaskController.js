@@ -14,10 +14,15 @@ function parseTags(tags) {
         if (Array.isArray(parsed)) return parsed;
     } catch (_) { }
 
-    return s
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
+    return s.split(",").map((t) => t.trim()).filter(Boolean);
+}
+
+function toBool(v) {
+    if (v === true) return true;
+    if (v === false) return false;
+    if (v === undefined || v === null) return false;
+    const s = String(v).trim().toLowerCase();
+    return s === "true" || s === "1" || s === "yes" || s === "on";
 }
 
 exports.updateTask = async (req, res) => {
@@ -25,7 +30,7 @@ exports.updateTask = async (req, res) => {
         const userId = req.user.user_id;
         const taskId = req.params.id;
 
-        const { title, description, tags, status } = req.body;
+        const { title, description, tags, status, removeImage } = req.body;
 
         if (title !== undefined && String(title).trim() === "") {
             return res.status(400).json({ message: "title cannot be empty." });
@@ -70,20 +75,24 @@ exports.updateTask = async (req, res) => {
 
         const hasNewFile = !!req.file && (typeof req.file.size !== "number" || req.file.size > 0);
 
+        const removeByFlag = toBool(removeImage);
+        const removeByEmptyImageField =
+            Object.prototype.hasOwnProperty.call(req.body, "image") &&
+            String(req.body.image ?? "").trim() === "";
+
+        const shouldReplaceImage = hasNewFile;
+        const shouldRemoveImage = !shouldReplaceImage && (removeByFlag || removeByEmptyImageField);
+
         let uploadedImageUrl = null;
         let uploadedImagePublicId = null;
 
-        if (hasNewFile) {
-            if (currentPublicId) {
-                await cloudinary.uploader.destroy(currentPublicId);
-            }
+        if (shouldReplaceImage) {
+            if (currentPublicId) await cloudinary.uploader.destroy(currentPublicId);
             const uploaded = await uploadBufferToCloudinary(req.file.buffer, "tasks");
             uploadedImageUrl = uploaded.secure_url;
             uploadedImagePublicId = uploaded.public_id;
-        } else {
-            if (currentPublicId) {
-                await cloudinary.uploader.destroy(currentPublicId);
-            }
+        } else if (shouldRemoveImage) {
+            if (currentPublicId) await cloudinary.uploader.destroy(currentPublicId);
         }
 
         const result = await pool.query(
@@ -94,19 +103,20 @@ exports.updateTask = async (req, res) => {
          tags = COALESCE($3, tags),
          status = COALESCE($4, status),
 
-         -- IMPORTANT: cast to text to avoid "could not determine data type"
          image_url = CASE
-           WHEN $5 = true THEN $6::text
-           ELSE NULL
+           WHEN $5 = true THEN NULL
+           WHEN $6 = true THEN $7::text
+           ELSE image_url
          END,
 
          image_public_id = CASE
-           WHEN $5 = true THEN $7::text
-           ELSE NULL
+           WHEN $5 = true THEN NULL
+           WHEN $6 = true THEN $8::text
+           ELSE image_public_id
          END,
 
          updated_at = NOW()
-       WHERE task_id = $8 AND user_id = $9
+       WHERE task_id = $9 AND user_id = $10
        RETURNING task_id, title, description, tags, status,
                  image_url, image_public_id,
                  created_at, updated_at`,
@@ -116,9 +126,10 @@ exports.updateTask = async (req, res) => {
                 tags !== undefined ? safeTags : null,
                 status !== undefined ? safeStatus : null,
 
-                hasNewFile,
-                hasNewFile ? uploadedImageUrl : null,
-                hasNewFile ? uploadedImagePublicId : null,
+                shouldRemoveImage,
+                shouldReplaceImage,
+                shouldReplaceImage ? uploadedImageUrl : null,
+                shouldReplaceImage ? uploadedImagePublicId : null,
 
                 taskId,
                 userId,

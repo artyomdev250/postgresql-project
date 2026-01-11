@@ -13,7 +13,7 @@ app.use(cookieParser());
 app.use("/auth", authRoutes);
 app.use("/api", homeRoutes);
 
-app.get("/", (req, res) => res.send("OK"));
+app.get("/", (req, res) => res.send("Node.js & PostgreSQL setup!"));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

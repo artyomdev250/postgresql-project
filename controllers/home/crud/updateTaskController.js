@@ -1,6 +1,6 @@
 const pool = require("../../../db");
-const cloudinary = require("../../../utils/cloudinary");
-const { uploadBufferToCloudinary } = require("../../../utils/cloudinaryUpload");
+const cloudinary = require("../../../utils/cloudinary/cloudinary");
+const { uploadBufferToCloudinary } = require("../../../utils/cloudinary/cloudinaryUpload");
 
 function isValidDate(value) {
     const d = new Date(value);

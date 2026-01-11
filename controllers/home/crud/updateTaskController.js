@@ -2,11 +2,6 @@ const pool = require("../../../db");
 const cloudinary = require("../../../utils/cloudinary/cloudinary");
 const { uploadBufferToCloudinary } = require("../../../utils/cloudinary/cloudinaryUpload");
 
-function isValidDate(value) {
-    const d = new Date(value);
-    return !Number.isNaN(d.getTime());
-}
-
 function parseTags(tags) {
     if (Array.isArray(tags)) return tags;
     if (tags === undefined || tags === null) return null;
@@ -17,9 +12,12 @@ function parseTags(tags) {
     try {
         const parsed = JSON.parse(s);
         if (Array.isArray(parsed)) return parsed;
-    } catch { }
+    } catch (_) { }
 
-    return s.split(",").map((t) => t.trim()).filter(Boolean);
+    return s
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
 }
 
 exports.updateTask = async (req, res) => {
@@ -27,18 +25,10 @@ exports.updateTask = async (req, res) => {
         const userId = req.user.user_id;
         const taskId = req.params.id;
 
-        const { title, deadline, description, tags, status, removeImage } = req.body;
+        const { title, description, tags, status } = req.body;
 
         if (title !== undefined && String(title).trim() === "") {
             return res.status(400).json({ message: "title cannot be empty." });
-        }
-        if (deadline !== undefined) {
-            if (deadline === null || String(deadline).trim() === "") {
-                return res.status(400).json({ message: "deadline cannot be empty." });
-            }
-            if (!isValidDate(deadline)) {
-                return res.status(400).json({ message: "deadline must be a valid date (YYYY-MM-DD)." });
-            }
         }
         if (description !== undefined && String(description).trim() === "") {
             return res.status(400).json({ message: "description cannot be empty." });
@@ -46,77 +36,90 @@ exports.updateTask = async (req, res) => {
 
         let safeTags = null;
         if (tags !== undefined) {
-            const parsedTags = parseTags(tags);
-            if (!parsedTags) return res.status(400).json({ message: "tags cannot be empty." });
+            const parsed = parseTags(tags);
+            if (!parsed) return res.status(400).json({ message: "tags cannot be empty." });
 
-            safeTags = parsedTags.map((t) => String(t).trim()).filter(Boolean);
+            safeTags = parsed.map((t) => String(t).trim()).filter(Boolean);
             if (safeTags.length === 0) {
                 return res.status(400).json({ message: "At least one tag is required." });
             }
         }
 
-        if (status !== undefined && status !== null) {
-            if (!["Pending", "Completed"].includes(status)) {
-                return res.status(400).json({ message: "status must be 'Pending' or 'Completed'." });
+        let safeStatus = null;
+        if (status !== undefined) {
+            const s = String(status).trim();
+            if (s !== "Pending" && s !== "Completed") {
+                return res.status(400).json({ message: "status must be Pending or Completed." });
             }
+            safeStatus = s;
         }
 
         const currentRes = await pool.query(
-            `SELECT image_public_id FROM tasks_data WHERE task_id = $1 AND user_id = $2 LIMIT 1`,
+            `SELECT image_public_id
+       FROM tasks_data
+       WHERE task_id = $1 AND user_id = $2
+       LIMIT 1`,
             [taskId, userId]
         );
+
         if (currentRes.rowCount === 0) {
             return res.status(404).json({ message: "Task not found." });
         }
 
         const currentPublicId = currentRes.rows[0].image_public_id;
 
-        let newImageUrl = undefined;
-        let newImagePublicId = undefined;
+        const hasNewFile = !!req.file && (typeof req.file.size !== "number" || req.file.size > 0);
 
-        const wantsRemove = String(removeImage).toLowerCase() === "true";
+        let uploadedImageUrl = null;
+        let uploadedImagePublicId = null;
 
-        if (wantsRemove) {
-            if (currentPublicId) {
-                await cloudinary.uploader.destroy(currentPublicId);
-            }
-            newImageUrl = null;
-            newImagePublicId = null;
-        }
-
-        if (req.file) {
+        if (hasNewFile) {
             if (currentPublicId) {
                 await cloudinary.uploader.destroy(currentPublicId);
             }
             const uploaded = await uploadBufferToCloudinary(req.file.buffer, "tasks");
-            newImageUrl = uploaded.secure_url;
-            newImagePublicId = uploaded.public_id;
+            uploadedImageUrl = uploaded.secure_url;
+            uploadedImagePublicId = uploaded.public_id;
+        } else {
+            if (currentPublicId) {
+                await cloudinary.uploader.destroy(currentPublicId);
+            }
         }
 
         const result = await pool.query(
             `UPDATE tasks_data
        SET
          title = COALESCE($1, title),
-         deadline = COALESCE($2, deadline),
-         description = COALESCE($3, description),
-         tags = COALESCE($4, tags),
-         status = COALESCE($5, status),
-         image_url = COALESCE($6, image_url),
-         image_public_id = COALESCE($7, image_public_id),
+         description = COALESCE($2, description),
+         tags = COALESCE($3, tags),
+         status = COALESCE($4, status),
+
+         -- IMPORTANT: cast to text to avoid "could not determine data type"
+         image_url = CASE
+           WHEN $5 = true THEN $6::text
+           ELSE NULL
+         END,
+
+         image_public_id = CASE
+           WHEN $5 = true THEN $7::text
+           ELSE NULL
+         END,
+
          updated_at = NOW()
        WHERE task_id = $8 AND user_id = $9
-       RETURNING task_id, title, deadline, description, tags, status,
+       RETURNING task_id, title, description, tags, status,
                  image_url, image_public_id,
-                 (status = 'Pending' AND deadline IS NOT NULL AND deadline < CURRENT_DATE) AS expired,
                  created_at, updated_at`,
             [
                 title !== undefined ? String(title).trim() : null,
-                deadline !== undefined ? deadline : null,
                 description !== undefined ? String(description).trim() : null,
                 tags !== undefined ? safeTags : null,
-                status !== undefined ? status : null,
-                newImageUrl === undefined ? null : newImageUrl,
-                newImagePublicId === undefined ? null : newImagePublicId,
+                status !== undefined ? safeStatus : null,
+
+                hasNewFile,
+                hasNewFile ? uploadedImageUrl : null,
+                hasNewFile ? uploadedImagePublicId : null,
+
                 taskId,
                 userId,
             ]

@@ -8,14 +8,9 @@ const { createTask } = require("../controllers/home/crud/createTaskController");
 const { updateTask } = require("../controllers/home/crud/updateTaskController");
 const { deleteTask } = require("../controllers/home/crud/deleteTaskController");
 
-const { getCompletedTasks, getExpiredTasks } = require("../controllers/home/getTaskListsController");
-
 const router = express.Router();
 
 router.get("/home", requireAuth, home);
-
-router.get("/tasks/expired", requireAuth, getExpiredTasks);
-router.get("/tasks/completed", requireAuth, getCompletedTasks);
 
 router.get("/tasks", requireAuth, getTasks);
 router.get("/tasks/:id", requireAuth, getTasks);

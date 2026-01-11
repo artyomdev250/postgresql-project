@@ -1,4 +1,5 @@
 const pool = require("../../../db");
+const { uploadBufferToCloudinary } = require("../../../utils/cloudinaryUpload");
 
 function isValidDate(value) {
     const d = new Date(value);
@@ -7,7 +8,6 @@ function isValidDate(value) {
 
 function parseTags(tags) {
     if (Array.isArray(tags)) return tags;
-
     if (tags === undefined || tags === null) return null;
 
     const s = String(tags).trim();
@@ -26,28 +26,22 @@ exports.createTask = async (req, res) => {
         const userId = req.user.user_id;
         const { title, deadline, description, tags, status } = req.body;
 
-        const safeTitle = title !== undefined && title !== null ? String(title).trim() : "";
-        if (!safeTitle) {
-            return res.status(400).json({ message: "title is required." });
-        }
+        const safeTitle = title ? String(title).trim() : "";
+        if (!safeTitle) return res.status(400).json({ message: "title is required." });
 
-        if (deadline === undefined || deadline === null || String(deadline).trim() === "") {
+        if (!deadline || String(deadline).trim() === "") {
             return res.status(400).json({ message: "deadline is required." });
         }
         if (!isValidDate(deadline)) {
-            return res.status(400).json({ message: "deadline must be a valid date (e.g. YYYY-MM-DD)." });
+            return res.status(400).json({ message: "deadline must be a valid date (YYYY-MM-DD)." });
         }
 
-        const safeDescription =
-            description !== undefined && description !== null ? String(description).trim() : "";
-        if (!safeDescription) {
-            return res.status(400).json({ message: "description is required." });
-        }
+        const safeDescription = description ? String(description).trim() : "";
+        if (!safeDescription) return res.status(400).json({ message: "description is required." });
 
         const parsedTags = parseTags(tags);
-        if (!parsedTags) {
-            return res.status(400).json({ message: "tags is required." });
-        }
+        if (!parsedTags) return res.status(400).json({ message: "tags is required." });
+
         const safeTags = parsedTags.map((t) => String(t).trim()).filter(Boolean);
         if (safeTags.length === 0) {
             return res.status(400).json({ message: "At least one tag is required." });
@@ -57,13 +51,23 @@ exports.createTask = async (req, res) => {
             return res.status(400).json({ message: "status must be 'Pending' or 'Completed'." });
         }
 
+        let imageUrl = null;
+        let imagePublicId = null;
+
+        if (req.file) {
+            const uploaded = await uploadBufferToCloudinary(req.file.buffer, "tasks");
+            imageUrl = uploaded.secure_url;
+            imagePublicId = uploaded.public_id;
+        }
+
         const result = await pool.query(
-            `INSERT INTO tasks_data (user_id, title, deadline, description, tags, status, expired)
-       VALUES ($1, $2, $3, $4, $5, COALESCE($6, 'Pending'), false)
+            `INSERT INTO tasks_data (user_id, title, deadline, description, tags, status, expired, image_url, image_public_id)
+       VALUES ($1, $2, $3, $4, $5, COALESCE($6, 'Pending'), false, $7, $8)
        RETURNING task_id, title, deadline, description, tags, status,
+                 image_url, image_public_id,
                  (status = 'Pending' AND deadline IS NOT NULL AND deadline < CURRENT_DATE) AS expired,
                  created_at, updated_at`,
-            [userId, safeTitle, deadline, safeDescription, safeTags, status || null]
+            [userId, safeTitle, deadline, safeDescription, safeTags, status || null, imageUrl, imagePublicId]
         );
 
         return res.status(201).json(result.rows[0]);

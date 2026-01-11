@@ -8,6 +8,7 @@ exports.getTasks = async (req, res) => {
         if (taskId) {
             const result = await pool.query(
                 `SELECT task_id, title, deadline, description, tags, status,
+                image_url, image_public_id,
                 (status = 'Pending' AND deadline IS NOT NULL AND deadline < CURRENT_DATE) AS expired,
                 created_at, updated_at
          FROM tasks_data
@@ -22,6 +23,7 @@ exports.getTasks = async (req, res) => {
 
         const result = await pool.query(
             `SELECT task_id, title, deadline, description, tags, status,
+              image_url, image_public_id,
               (status = 'Pending' AND deadline IS NOT NULL AND deadline < CURRENT_DATE) AS expired,
               created_at, updated_at
        FROM tasks_data

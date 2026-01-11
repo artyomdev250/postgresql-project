@@ -1,5 +1,6 @@
 const express = require("express");
 const { requireAuth } = require("../middleware/auth");
+const upload = require("../middleware/upload");
 const { home } = require("../controllers/home/homeController");
 
 const { getTasks } = require("../controllers/home/crud/getTasksController");
@@ -18,8 +19,8 @@ router.get("/tasks/completed", requireAuth, getCompletedTasks);
 
 router.get("/tasks", requireAuth, getTasks);
 router.get("/tasks/:id", requireAuth, getTasks);
-router.post("/tasks", requireAuth, createTask);
-router.put("/tasks/:id", requireAuth, updateTask);
+router.post("/tasks", requireAuth, upload.none(), createTask);
+router.put("/tasks/:id", requireAuth, upload.none(), updateTask);
 router.delete("/tasks/:id", requireAuth, deleteTask);
 
 module.exports = router;

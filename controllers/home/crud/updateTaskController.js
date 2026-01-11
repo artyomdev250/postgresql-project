@@ -1,11 +1,23 @@
 const pool = require("../../../db");
 
-function isPastDate(dateString) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const d = new Date(dateString);
-    d.setHours(0, 0, 0, 0);
-    return d < today;
+function isValidDate(value) {
+    const d = new Date(value);
+    return !Number.isNaN(d.getTime());
+}
+
+function parseTags(tags) {
+    if (Array.isArray(tags)) return tags;
+    if (tags === undefined || tags === null) return null;
+
+    const s = String(tags).trim();
+    if (!s) return [];
+
+    try {
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) return parsed;
+    } catch { }
+
+    return s.split(",").map((t) => t.trim()).filter(Boolean);
 }
 
 exports.updateTask = async (req, res) => {
@@ -15,25 +27,46 @@ exports.updateTask = async (req, res) => {
 
         const { title, deadline, description, tags, status } = req.body;
 
-        if (deadline !== undefined && deadline !== null && isPastDate(deadline)) {
-            return res.status(400).json({ message: "deadline must be today or in the future." });
+        if (title !== undefined) {
+            const safeTitle = title === null ? "" : String(title).trim();
+            if (!safeTitle) {
+                return res.status(400).json({ message: "title cannot be empty." });
+            }
         }
 
-        if (status && !["Pending", "Completed"].includes(status)) {
-            return res.status(400).json({ message: "status must be 'Pending' or 'Completed'." });
+        if (deadline !== undefined) {
+            if (deadline === null || String(deadline).trim() === "") {
+                return res.status(400).json({ message: "deadline cannot be empty." });
+            }
+            if (!isValidDate(deadline)) {
+                return res.status(400).json({ message: "deadline must be a valid date (e.g. YYYY-MM-DD)." });
+            }
         }
 
-        const safeTags =
-            tags === undefined
-                ? undefined
-                : Array.isArray(tags)
-                    ? tags.map((t) => String(t).trim()).filter(Boolean)
-                    : null;
+        if (description !== undefined) {
+            const safeDescription = description === null ? "" : String(description).trim();
+            if (!safeDescription) {
+                return res.status(400).json({ message: "description cannot be empty." });
+            }
+        }
 
-        const expired =
-            status === "Completed" ? false :
-                deadline ? false :
-                    undefined;
+        let safeTags = null;
+        if (tags !== undefined) {
+            const parsedTags = parseTags(tags);
+            if (!parsedTags) {
+                return res.status(400).json({ message: "tags cannot be empty." });
+            }
+            safeTags = parsedTags.map((t) => String(t).trim()).filter(Boolean);
+            if (safeTags.length === 0) {
+                return res.status(400).json({ message: "At least one tag is required." });
+            }
+        }
+
+        if (status !== undefined && status !== null) {
+            if (!["Pending", "Completed"].includes(status)) {
+                return res.status(400).json({ message: "status must be 'Pending' or 'Completed'." });
+            }
+        }
 
         const result = await pool.query(
             `UPDATE tasks_data
@@ -43,17 +76,17 @@ exports.updateTask = async (req, res) => {
          description = COALESCE($3, description),
          tags = COALESCE($4, tags),
          status = COALESCE($5, status),
-         expired = COALESCE($6, expired),
          updated_at = NOW()
-       WHERE task_id = $7 AND user_id = $8
-       RETURNING task_id, title, deadline, description, tags, status, expired, created_at, updated_at`,
+       WHERE task_id = $6 AND user_id = $7
+       RETURNING task_id, title, deadline, description, tags, status,
+                 (status = 'Pending' AND deadline IS NOT NULL AND deadline < CURRENT_DATE) AS expired,
+                 created_at, updated_at`,
             [
                 title !== undefined ? String(title).trim() : null,
                 deadline !== undefined ? deadline : null,
-                description !== undefined ? description : null,
-                safeTags === undefined ? null : safeTags,
+                description !== undefined ? String(description).trim() : null,
+                tags !== undefined ? safeTags : null,
                 status !== undefined ? status : null,
-                expired === undefined ? null : expired,
                 taskId,
                 userId,
             ]

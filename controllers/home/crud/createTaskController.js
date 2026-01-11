@@ -1,11 +1,24 @@
 const pool = require("../../../db");
 
-function isPastDate(dateString) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const d = new Date(dateString);
-    d.setHours(0, 0, 0, 0);
-    return d < today;
+function isValidDate(value) {
+    const d = new Date(value);
+    return !Number.isNaN(d.getTime());
+}
+
+function parseTags(tags) {
+    if (Array.isArray(tags)) return tags;
+
+    if (tags === undefined || tags === null) return null;
+
+    const s = String(tags).trim();
+    if (!s) return [];
+
+    try {
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) return parsed;
+    } catch { }
+
+    return s.split(",").map((t) => t.trim()).filter(Boolean);
 }
 
 exports.createTask = async (req, res) => {
@@ -13,29 +26,44 @@ exports.createTask = async (req, res) => {
         const userId = req.user.user_id;
         const { title, deadline, description, tags, status } = req.body;
 
-        if (!title || String(title).trim().length === 0) {
+        const safeTitle = title !== undefined && title !== null ? String(title).trim() : "";
+        if (!safeTitle) {
             return res.status(400).json({ message: "title is required." });
         }
 
-        if (deadline && isPastDate(deadline)) {
-            return res.status(400).json({ message: "deadline must be today or in the future." });
+        if (deadline === undefined || deadline === null || String(deadline).trim() === "") {
+            return res.status(400).json({ message: "deadline is required." });
+        }
+        if (!isValidDate(deadline)) {
+            return res.status(400).json({ message: "deadline must be a valid date (e.g. YYYY-MM-DD)." });
+        }
+
+        const safeDescription =
+            description !== undefined && description !== null ? String(description).trim() : "";
+        if (!safeDescription) {
+            return res.status(400).json({ message: "description is required." });
+        }
+
+        const parsedTags = parseTags(tags);
+        if (!parsedTags) {
+            return res.status(400).json({ message: "tags is required." });
+        }
+        const safeTags = parsedTags.map((t) => String(t).trim()).filter(Boolean);
+        if (safeTags.length === 0) {
+            return res.status(400).json({ message: "At least one tag is required." });
         }
 
         if (status && !["Pending", "Completed"].includes(status)) {
             return res.status(400).json({ message: "status must be 'Pending' or 'Completed'." });
         }
 
-        const safeTags = Array.isArray(tags)
-            ? tags.map((t) => String(t).trim()).filter(Boolean)
-            : [];
-
-        const expired = false;
-
         const result = await pool.query(
             `INSERT INTO tasks_data (user_id, title, deadline, description, tags, status, expired)
-       VALUES ($1, $2, $3, $4, $5, COALESCE($6, 'Pending'), $7)
-       RETURNING task_id, title, deadline, description, tags, status, expired, created_at, updated_at`,
-            [userId, title.trim(), deadline || null, description || null, safeTags, status || null, expired]
+       VALUES ($1, $2, $3, $4, $5, COALESCE($6, 'Pending'), false)
+       RETURNING task_id, title, deadline, description, tags, status,
+                 (status = 'Pending' AND deadline IS NOT NULL AND deadline < CURRENT_DATE) AS expired,
+                 created_at, updated_at`,
+            [userId, safeTitle, deadline, safeDescription, safeTags, status || null]
         );
 
         return res.status(201).json(result.rows[0]);

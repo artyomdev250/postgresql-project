@@ -1,5 +1,5 @@
 const pool = require("../../../db");
-const cloudinary = require("../../../utils/cloudinary");
+const cloudinary = require("../../../utils/cloudinary/cloudinary");
 
 exports.deleteTask = async (req, res) => {
     try {

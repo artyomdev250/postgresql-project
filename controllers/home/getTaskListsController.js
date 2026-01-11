@@ -6,6 +6,7 @@ exports.getCompletedTasks = async (req, res) => {
 
         const result = await pool.query(
             `SELECT task_id, title, deadline, description, tags, status,
+              image_url, image_public_id,
               FALSE AS expired,
               created_at, updated_at
        FROM tasks_data
@@ -27,6 +28,7 @@ exports.getExpiredTasks = async (req, res) => {
 
         const result = await pool.query(
             `SELECT task_id, title, deadline, description, tags, status,
+              image_url, image_public_id,
               TRUE AS expired,
               created_at, updated_at
        FROM tasks_data

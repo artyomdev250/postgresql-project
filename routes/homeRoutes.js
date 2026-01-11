@@ -19,8 +19,8 @@ router.get("/tasks/completed", requireAuth, getCompletedTasks);
 
 router.get("/tasks", requireAuth, getTasks);
 router.get("/tasks/:id", requireAuth, getTasks);
-router.post("/tasks", requireAuth, upload.none(), createTask);
-router.put("/tasks/:id", requireAuth, upload.none(), updateTask);
+router.post("/tasks", requireAuth, upload.single("image"), createTask);
+router.put("/tasks/:id", requireAuth, upload.single("image"), updateTask);
 router.delete("/tasks/:id", requireAuth, deleteTask);
 
 module.exports = router;

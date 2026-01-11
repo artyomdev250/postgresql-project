@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: projectdb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: artyom468293
+      POSTGRES_DB: projectdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d projectdb" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    container_name: projectapi
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: artyom468293
+      PGDATABASE: projectdb
+
+      JWT_ACCESS_SECRET: replace_me_access
+      JWT_REFRESH_SECRET: replace_me_refresh
+      ACCESS_TOKEN_EXPIRES_IN: 5m
+      REFRESH_TOKEN_EXPIRES_IN: 7d
+
+      CLOUDINARY_CLOUD_NAME: dq3g8vptr
+      CLOUDINARY_API_KEY: 986789728437396
+      CLOUDINARY_API_SECRET: __f8ty1zBvHNFq9M7JA15qoOEIE
+
+      NODE_ENV: development
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+volumes:
+  pgdata:

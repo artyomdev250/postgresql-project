@@ -1,0 +1,375 @@
+{
+	"info": {
+		"_postman_id": "86902954-d008-4c75-ac5a-77f40593b268",
+		"name": "postgresql-project",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "50095742",
+		"_collection_link": "https://artyomdev250-488933.postman.co/workspace/Artyom-Agadzhanyan's-Workspace~9dc8e0da-c299-4bcd-8869-11910d6af52f/collection/50095742-86902954-d008-4c75-ac5a-77f40593b268?action=share&source=collection_link&creator=50095742"
+	},
+	"item": [
+		{
+			"name": "auth",
+			"item": [
+				{
+					"name": "sign_up",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"artyomagadzhanyan\",\r\n    \"email\": \"artyom.agadzhanyan250@gmail.com\",\r\n    \"password\": \"artyom468293\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/auth/signup",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "sign_in",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"usernameOrEmail\": \"artyomagadzhanyan\",\r\n    \"password\": \"artyom468293\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/auth/signin",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"auth",
+								"signin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "refresh",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/auth/refresh",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"auth",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "sign_out",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"alice\",\r\n    \"email\": \"alice@example.com\",\r\n    \"password\": \"supersecret123\"\r\n}"
+						},
+						"url": {
+							"raw": "localhost:3000/auth/signout",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"auth",
+								"signout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "home",
+			"item": [
+				{
+					"name": "tasks",
+					"item": [
+						{
+							"name": "GET",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFydHlvbWFnYWR6aGFueWFuIiwiZW1haWwiOiJhcnR5b20uYWdhZHpoYW55YW4yNTBAZ21haWwuY29tIiwiaWF0IjoxNzY4MjM1MTg2LCJleHAiOjE3NjgyMzU0ODZ9.SKVqD36KEL1Jb1adg6ab8oCYvzMU-uI_pyYR6XKZkX4",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "localhost:3000/api/tasks/",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"tasks",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "POST",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFydHlvbWFnYWR6aGFueWFuIiwiZW1haWwiOiJhcnR5b20uYWdhZHpoYW55YW4yNTBAZ21haWwuY29tIiwiaWF0IjoxNzY4MTY1MzYzLCJleHAiOjE3NjgxNjU2NjN9.0247jpzLFPZUYf4C_pC2RDVTYEtgEo-N8B6jaiP3tvo",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "title",
+											"value": "Task",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "Testing my POST request to create some tasks",
+											"type": "text"
+										},
+										{
+											"key": "tags",
+											"value": "express, postgreslq, cyberpunk",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"description": "Не обязательно",
+											"type": "file",
+											"src": "/C:/Users/User/Downloads/GR_Epic_Landscape_Offer2560x1440-2560x1440-08987c0c3e1701ea6a7217ed5616922d.jpg",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "localhost:3000/api/tasks",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"tasks"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "PUT",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFydHlvbWFnYWR6aGFueWFuIiwiZW1haWwiOiJhcnR5b20uYWdhZHpoYW55YW4yNTBAZ21haWwuY29tIiwiaWF0IjoxNzY4MTY1OTIxLCJleHAiOjE3NjgxNjYyMjF9.wryk4CQSXTpB6ZiQOxsLJNh9T_tz8UzdD0Q6yQMb1fA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "status",
+											"value": "Completed",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "localhost:3000/api/tasks/25",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"tasks",
+										"25"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DELETE",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFydHlvbWFnYWR6aGFueWFuIiwiZW1haWwiOiJhcnR5b20uYWdhZHpoYW55YW4yNTBAZ21haWwuY29tIiwiaWF0IjoxNzY4MTY2MDY4LCJleHAiOjE3NjgxNjYzNjh9.tC6y9XI3EYgLgvA7k9hF7ynGyakRN-IhEmH-f-GbrKs",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "localhost:3000/api/tasks/24",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"api",
+										"tasks",
+										"24"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "home",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFydHlvbWFnYWR6aGFueWFuIiwiZW1haWwiOiJhcnR5b20uYWdhZHpoYW55YW4yNTBAZ21haWwuY29tIiwiaWF0IjoxNzY4MjMwOTU2LCJleHAiOjE3NjgyMzEyNTZ9.H1BI9ee38g_8qef_ZLhMxQMueMmZhkbg1yHBn7vyOUs",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/api/home",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"home"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3000/",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

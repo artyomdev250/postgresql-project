@@ -49,71 +49,35 @@ cp .env.example .env
 
 > ⚠️ `.env` содержит секреты. Не коммитьте его в репозиторий.
 
-## Запуск через Docker (рекомендуется)
+## Запуск через Docker
 
 1) Создайте `.env` (см. выше)
 
-2) Поднимите сервисы:
+2) Запуск в фоновом режиме:
 
 ```bash
 docker compose up --build
+```
+
+3) Подождите, пока PostgreSQL будет готов
+
+```bash
+docker compose exec db sh -lc 'until pg_isready -U postgres -d projectdb; do sleep 1; done'
+```
+
+4) Импортируйте ваш SQL
+
+```bash
+Get-Content -Raw -Encoding UTF8 .\init.sql | docker compose exec -T db psql -U postgres -d projectdb
+```
+
+5) Проверьте таблицы
+
+```bash
+docker compose exec db psql -U postgres -d projectdb -c "\dt"
 ```
 
 API будет доступно на `http://localhost:3000`.
-
-### Инициализация базы данных
-
-В проекте есть `init.sql`, но он **в кодировке UTF‑16LE** (это pg_dump). Удобнее один раз сконвертировать в UTF‑8 и применить.
-
-**Вариант A: применить вручную (быстро)**
-
-Из корня проекта:
-
-```bash
-iconv -f UTF-16LE -t UTF-8 init.sql > init.utf8.sql
-docker compose exec -T db psql -U "$PGUSER" -d "$PGDATABASE" < init.utf8.sql
-```
-
-**Вариант B: автоприменение при первом старте Postgres**
-
-1) Создайте `init.utf8.sql` как выше  
-2) Добавьте volume в сервис `db` в `docker-compose.yml`:
-
-```yaml
-services:
-  db:
-    ...
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./init.utf8.sql:/docker-entrypoint-initdb.d/init.sql:ro
-```
-
-3) Важно: init-скрипты выполняются только при **первом** создании volume. Если БД уже запускалась — удалите volume:
-
-```bash
-docker compose down -v
-docker compose up --build
-```
-
-## Запуск без Docker (локально)
-
-1) Поднимите PostgreSQL и создайте БД `PGDATABASE` (например `projectdb`)
-
-2) Примените `init.sql` (с конвертацией):
-
-```bash
-iconv -f UTF-16LE -t UTF-8 init.sql > init.utf8.sql
-psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -f init.utf8.sql
-```
-
-3) Установите зависимости и запустите сервер:
-
-```bash
-npm install
-npm run dev   # nodemon
-# или
-npm start     # node server.js
-```
 
 ## Аутентификация
 

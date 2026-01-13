@@ -26,12 +26,6 @@ REST API на **Node.js (Express)** + **PostgreSQL** с:
 - `middleware/upload.js` — конфиг `multer`
 - `init.sql` — дамп/схема БД (таблицы `users_data`, `tasks_data`)
 
-## Требования
-
-- Node.js 22 (или совместимая версия) и npm **или** Docker + Docker Compose
-- PostgreSQL 16 (если запускаете без Docker)
-- Аккаунт Cloudinary (если хотите загружать картинки)
-
 ## Переменные окружения
 
 Скопируйте пример и заполните значения:

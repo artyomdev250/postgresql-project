@@ -56,7 +56,7 @@ cp .env.example .env
 2) Запуск в фоновом режиме:
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
 3) Подождите, пока PostgreSQL будет готов
